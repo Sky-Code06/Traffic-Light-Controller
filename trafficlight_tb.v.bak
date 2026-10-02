@@ -1,0 +1,82 @@
+`timescale 1ns / 1ps
+
+module tb_trafficlight;
+
+    // Inputs
+    reg clk;
+    reg rst_n;
+    reg ped_req_a;
+    reg ped_req_b;
+    reg emergency;
+
+    // Outputs
+    wire [2:0] light_a;
+    wire [2:0] light_b;
+    wire [1:0] ped_light_a;
+    wire [1:0] ped_light_b;
+
+    // Instantiate the Unit Under Test (UUT)
+    // We override SLOW_CLK_PERIOD to 4 cycles to speed up simulation.
+    // In real hardware, this would default back to 50,000,000.
+    trafficlight #(
+        .SLOW_CLK_PERIOD(4)
+    ) uut (
+        .clk(clk), 
+        .rst_n(rst_n), 
+        .ped_req_a(ped_req_a), 
+        .ped_req_b(ped_req_b), 
+        .emergency(emergency), 
+        .light_a(light_a), 
+        .light_b(light_b), 
+        .ped_light_a(ped_light_a), 
+        .ped_light_b(ped_light_b)
+    );
+
+    // Clock generation
+    always #5 clk = ~clk; // 100MHz clock (10ns period)
+
+    initial begin
+        // Initialize Inputs
+        clk = 0;
+        rst_n = 0;
+        ped_req_a = 0;
+        ped_req_b = 0;
+        emergency = 0;
+
+        // Reset the system
+        #20;
+        rst_n = 1;
+
+        // 1. Let it run normal cycle (A Green -> A Yellow -> B Green)
+        #2000; 
+
+        // 2. Trigger Pedestrian A request
+        $display("Triggering Pedestrian A Request");
+        ped_req_a = 1;
+        #20;
+        ped_req_a = 0;
+        // Wait for A Green -> Yellow -> Ped Walk -> Stop -> B Green
+        #3000;
+
+        // 3. Trigger Emergency
+        $display("Triggering Emergency");
+        emergency = 1;
+        #500; // Hold emergency for a while
+        
+        // 4. Release Emergency
+        $display("Releasing Emergency");
+        emergency = 0;
+        // System should reset to A Green safely
+        #1000;
+
+        // 5. Trigger Pedestrian B request
+        $display("Triggering Pedestrian B Request");
+        ped_req_b = 1;
+        #20;
+        ped_req_b = 0;
+        
+        #5000;
+        $finish;
+    end
+      
+endmodule

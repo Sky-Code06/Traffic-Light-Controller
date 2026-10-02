@@ -1,0 +1,194 @@
+module trafficlight (
+    input  wire       clk,
+    input  wire       rst_n,
+    input  wire       ped_req_a,
+    input  wire       ped_req_b,
+    input  wire       emergency,
+
+    output wire [2:0] light_a,
+    output wire [2:0] light_b,
+    output wire [1:0] ped_light_a,
+    output wire [1:0] ped_light_b
+);
+
+    localparam RED       = 3'b001;
+    localparam YELLOW    = 3'b010;
+    localparam GREEN     = 3'b100;
+
+    localparam DONT_WALK = 2'b01;
+    localparam WALK      = 2'b10;
+
+    localparam [2:0] S_A_GREEN    = 3'b000;
+    localparam [2:0] S_A_YELLOW   = 3'b001;
+    localparam [2:0] S_A_PED_WALK = 3'b010;
+    localparam [2:0] S_A_PED_STOP = 3'b011;
+    localparam [2:0] S_B_GREEN    = 3'b100;
+    localparam [2:0] S_B_YELLOW   = 3'b101;
+    localparam [2:0] S_B_PED_WALK = 3'b110;
+    localparam [2:0] S_B_PED_STOP = 3'b111;
+
+    localparam GREEN_TIME    = 10;
+    localparam YELLOW_TIME   = 3;
+    localparam PED_WALK_TIME = 5;
+    localparam PED_STOP_TIME = 2;
+    localparam SLOW_CLK_PERIOD = 50_000_000; 
+
+    reg [2:0] state, next_state;
+    reg [7:0] timer;
+    
+    reg ped_a_latch, ped_b_latch;
+    reg [25:0] clk_counter;
+    wire slow_clk_enable;
+
+    assign slow_clk_enable = (clk_counter == SLOW_CLK_PERIOD - 1);
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            clk_counter <= 0;
+        end else if (slow_clk_enable) begin
+            clk_counter <= 0;
+        end else begin
+            clk_counter <= clk_counter + 1;
+        end
+    end
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            ped_a_latch <= 1'b0;
+            ped_b_latch <= 1'b0;
+        end else begin
+            if (ped_req_a) begin
+                ped_a_latch <= 1'b1;
+            end
+            else if (state == S_A_PED_WALK) begin
+                ped_a_latch <= 1'b0;
+            end
+
+            if (ped_req_b) begin
+                ped_b_latch <= 1'b1;
+            end
+            else if (state == S_B_PED_WALK) begin
+                ped_b_latch <= 1'b0;
+            end
+        end
+    end
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            state <= S_A_GREEN;
+            timer <= 0;
+        end else if (slow_clk_enable) begin
+            if (timer == 0) begin
+                state <= next_state;
+                case (next_state)
+                    S_A_GREEN:    timer <= GREEN_TIME;
+                    S_A_YELLOW:   timer <= YELLOW_TIME;
+                    S_A_PED_WALK: timer <= PED_WALK_TIME;
+                    S_A_PED_STOP: timer <= PED_STOP_TIME;
+                    S_B_GREEN:    timer <= GREEN_TIME;
+                    S_B_YELLOW:   timer <= YELLOW_TIME;
+                    S_B_PED_WALK: timer <= PED_WALK_TIME;
+                    S_B_PED_STOP: timer <= PED_STOP_TIME;
+                    default:      timer <= GREEN_TIME;
+                endcase
+            end else begin
+                timer <= timer - 1;
+            end
+        end
+    end
+
+    always @(*) begin
+        next_state = state;
+        if (timer == 0) begin
+            case (state)
+                S_A_GREEN:    
+                    next_state = S_A_YELLOW;
+                
+                S_A_YELLOW:
+                    if (ped_a_latch)
+                        next_state = S_A_PED_WALK;
+                    else
+                        next_state = S_B_GREEN;
+
+                S_A_PED_WALK: 
+                    next_state = S_A_PED_STOP;
+
+                S_A_PED_STOP: 
+                    next_state = S_B_GREEN;
+
+                S_B_GREEN:
+                    next_state = S_B_YELLOW;
+                
+                S_B_YELLOW:
+                    if (ped_b_latch)
+                        next_state = S_B_PED_WALK;
+                    else
+                        next_state = S_A_GREEN;
+
+                S_B_PED_WALK: 
+                    next_state = S_B_PED_STOP;
+
+                S_B_PED_STOP: 
+                    next_state = S_A_GREEN;
+
+                default:
+                    next_state = S_A_GREEN;
+            endcase
+        end
+    end
+
+    reg [2:0] light_a_fsm;
+    reg [2:0] light_b_fsm;
+    reg [1:0] ped_light_a_fsm;
+    reg [1:0] ped_light_b_fsm;
+
+    always @(*) begin
+        light_a_fsm     = RED;
+        light_b_fsm     = RED;
+        ped_light_a_fsm = DONT_WALK;
+        ped_light_b_fsm = DONT_WALK;
+
+        case (state)
+            S_A_GREEN: begin
+                light_a_fsm = GREEN;
+                light_b_fsm = RED;
+            end
+            S_A_YELLOW: begin
+                light_a_fsm = YELLOW;
+                light_b_fsm = RED;
+            end
+            S_A_PED_WALK: begin
+                light_a_fsm = RED;
+                light_b_fsm = RED;
+                ped_light_a_fsm = WALK;
+            end
+            S_A_PED_STOP: begin
+                light_a_fsm = RED;
+                light_b_fsm = RED;
+            end
+            S_B_GREEN: begin
+                light_a_fsm = RED;
+                light_b_fsm = GREEN;
+            end
+            S_B_YELLOW: begin
+                light_a_fsm = RED;
+                light_b_fsm = YELLOW;
+            end
+            S_B_PED_WALK: begin
+                light_a_fsm = RED;
+                light_b_fsm = RED;
+                ped_light_b_fsm = WALK;
+            end
+            S_B_PED_STOP: begin
+                light_a_fsm = RED;
+                light_b_fsm = RED;
+            end
+        endcase
+    end
+    
+    assign light_a = (emergency) ? RED : light_a_fsm;
+    assign light_b = (emergency) ? RED : light_b_fsm;
+    assign ped_light_a = (emergency) ? DONT_WALK : ped_light_a_fsm;
+    assign ped_light_b = (emergency) ? DONT_WALK : ped_light_b_fsm;
+
+endmodule

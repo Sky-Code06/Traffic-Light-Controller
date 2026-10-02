@@ -1,0 +1,52 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+dC:/intelFPGA/18.1
+vtb_trafficlight
+Z0 !s110 1769789724
+!i10b 1
+!s100 :KMn<ae:<5>ig5e?KP2]C3
+I1VnNVIQO[2Nj4nigemmGl3
+Z1 VDg1SIo80bB@j0V0VzS_@n1
+Z2 dC:/Aakash's File/GITHUB/Traffic light FPGA/Traffic-Light-Controller
+w1769786794
+8C:/Aakash's File/GITHUB/Traffic light FPGA/Traffic-Light-Controller/trafficlight_tb.v
+FC:/Aakash's File/GITHUB/Traffic light FPGA/Traffic-Light-Controller/trafficlight_tb.v
+L0 3
+Z3 OV;L;10.5b;63
+r1
+!s85 0
+31
+Z4 !s108 1769789724.000000
+!s107 C:/Aakash's File/GITHUB/Traffic light FPGA/Traffic-Light-Controller/trafficlight_tb.v|
+!s90 -reportprogress|300|-work|work|-stats=none|C:/Aakash's File/GITHUB/Traffic light FPGA/Traffic-Light-Controller/trafficlight_tb.v|
+!i113 1
+Z5 o-work work
+Z6 tCvgOpt 0
+vtrafficlight
+R0
+!i10b 1
+!s100 5SmZ;UDKj=O0V]jUQYNXc2
+IggNLCSZ[`_KeihlNmMWaj1
+R1
+R2
+w1769789720
+8C:/Aakash's File/GITHUB/Traffic light FPGA/Traffic-Light-Controller/trafficlight.v
+FC:/Aakash's File/GITHUB/Traffic light FPGA/Traffic-Light-Controller/trafficlight.v
+L0 1
+R3
+r1
+!s85 0
+31
+R4
+!s107 C:/Aakash's File/GITHUB/Traffic light FPGA/Traffic-Light-Controller/trafficlight.v|
+!s90 -reportprogress|300|-work|work|-stats=none|C:/Aakash's File/GITHUB/Traffic light FPGA/Traffic-Light-Controller/trafficlight.v|
+!i113 1
+R5
+R6
